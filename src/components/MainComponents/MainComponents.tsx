@@ -10,6 +10,7 @@ import {
   MenuItem,
   useTheme,
   Pagination,
+  SelectChangeEvent,
 } from '@mui/material';
 import { Contacts } from '@/types/contactsType';
 import { getAllContacts } from '@/api/getContacts';
@@ -30,6 +31,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import SortableContactItem from '../SortableContactItem/SortableContactItem';
+import { deleteContact } from '@/api/deleteContact';
 
 const MainComponents = () => {
   const theme = useTheme();
@@ -56,7 +58,13 @@ const MainComponents = () => {
   }, []);
 
   const handleCreateContact = () => navigate.push('/create');
-  const handleDelete = (id: string) => console.log('Delete contact', id);
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteContact(id);
+    } catch (err) {
+      return err;
+    }
+  };
   const handleSearch = (value: string) => {
     setQuery(value);
     setPage(1);
@@ -131,6 +139,11 @@ const MainComponents = () => {
     }
   };
 
+  const handleChange = (e: SelectChangeEvent<string>) => {
+    setSelectedTag(e.target.value);
+    setPage(1);
+  };
+
   if (!mounted) return null;
 
   return (
@@ -191,10 +204,7 @@ const MainComponents = () => {
 
           <Select
             value={selectedTag}
-            onChange={(e) => {
-              setSelectedTag(e.target.value);
-              setPage(1);
-            }}
+            onChange={handleChange}
             displayEmpty
             size='small'
             sx={{
