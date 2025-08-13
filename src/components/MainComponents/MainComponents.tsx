@@ -9,8 +9,6 @@ import {
   Select,
   MenuItem,
   useTheme,
-  Chip,
-  OutlinedInput,
   Pagination,
 } from '@mui/material';
 import { Contacts } from '@/types/contactsType';
@@ -29,7 +27,7 @@ const MainComponents = () => {
   const [query, setQuery] = useState('');
 
   const [selectedCompany, setSelectedCompany] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedTag, setSelectedTag] = useState<string>('');
 
   const [page, setPage] = useState(1);
 
@@ -73,13 +71,11 @@ const MainComponents = () => {
         : true;
 
       const matchTags =
-        selectedTags.length > 0
-          ? selectedTags.every((tag) => item.teg?.includes(tag))
-          : true;
+        selectedTag !== '' ? item.teg?.includes(selectedTag) : true;
 
       return matchQuery && matchCompany && matchTags;
     });
-  }, [contacts, query, selectedCompany, selectedTags]);
+  }, [contacts, query, selectedCompany, selectedTag]);
 
   const sortedContacts = useMemo(() => {
     return [...filteredContacts].sort((a, b) => {
@@ -160,31 +156,23 @@ const MainComponents = () => {
           </Select>
 
           <Select
-            multiple
-            value={selectedTags}
+            value={selectedTag}
             onChange={(e) => {
-              setSelectedTags(
-                typeof e.target.value === 'string'
-                  ? e.target.value.split(',')
-                  : e.target.value
-              );
+              setSelectedTag(e.target.value);
               setPage(1);
             }}
-            input={<OutlinedInput label='Теги' />}
-            renderValue={(selected) => (
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                {(selected as string[]).map((value) => (
-                  <Chip key={value} label={value} size='small' />
-                ))}
-              </Box>
-            )}
+            displayEmpty
             size='small'
             sx={{
               color: theme.palette.common.white,
               backgroundColor: theme.palette.grey[900],
               minWidth: 180,
+              '& .MuiSelect-icon': {
+                color: theme.palette.common.white,
+              },
             }}
           >
+            <MenuItem value=''>Всі теги</MenuItem>
             {tags.map((tag) => (
               <MenuItem key={tag} value={tag}>
                 {tag}
