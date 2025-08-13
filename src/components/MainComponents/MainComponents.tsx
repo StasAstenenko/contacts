@@ -14,16 +14,29 @@ import {
 import { Contacts } from '@/types/contactsType';
 import { getAllContacts } from '@/api/getContacts';
 import { useRouter } from 'next/navigation';
-import ContactItem from '../ContactItem/ContactItem';
 import SearchBar from '../SearchBar/SearchBar';
 import { ITEMS_PER_PAGE } from '@/constants/constants';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import SortableContactItem from '../SortableContactItem/SortableContactItem';
 
 const MainComponents = () => {
   const theme = useTheme();
   const [contacts, setContacts] = useState<Contacts[]>([]);
   const [mounted, setMounted] = useState(false);
 
-  const [sortBy, setSortBy] = useState<'name' | 'company'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'company' | 'manual'>('name');
   const [query, setQuery] = useState('');
 
   const [selectedCompany, setSelectedCompany] = useState('');
@@ -32,6 +45,7 @@ const MainComponents = () => {
   const [page, setPage] = useState(1);
 
   const navigate = useRouter();
+  const sensors = useSensors(useSensor(PointerSensor));
 
   useEffect(() => {
     setMounted(true);
@@ -78,19 +92,24 @@ const MainComponents = () => {
   }, [contacts, query, selectedCompany, selectedTag]);
 
   const sortedContacts = useMemo(() => {
-    return [...filteredContacts].sort((a, b) => {
-      if (sortBy === 'name') {
+    if (sortBy === 'manual') {
+      return filteredContacts;
+    }
+    if (sortBy === 'name') {
+      return [...filteredContacts].sort((a, b) => {
         const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
         const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
         return nameA.localeCompare(nameB);
-      }
-      if (sortBy === 'company') {
+      });
+    }
+    if (sortBy === 'company') {
+      return [...filteredContacts].sort((a, b) => {
         return (a.company || '')
           .toLowerCase()
           .localeCompare((b.company || '').toLowerCase());
-      }
-      return 0;
-    });
+      });
+    }
+    return filteredContacts;
   }, [filteredContacts, sortBy]);
 
   const paginatedContacts = useMemo(() => {
@@ -99,6 +118,18 @@ const MainComponents = () => {
   }, [sortedContacts, page]);
 
   const totalPages = Math.ceil(sortedContacts.length / ITEMS_PER_PAGE);
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (over && active.id !== over.id) {
+      setSortBy('manual');
+      setContacts((prev) => {
+        const oldIndex = prev.findIndex((c) => c.id === active.id);
+        const newIndex = prev.findIndex((c) => c.id === over.id);
+        if (oldIndex === -1 || newIndex === -1) return prev;
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
+  };
 
   if (!mounted) return null;
 
@@ -121,7 +152,9 @@ const MainComponents = () => {
 
           <Select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'name' | 'company')}
+            onChange={(e) =>
+              setSortBy(e.target.value as 'name' | 'company' | 'manual')
+            }
             size='small'
             sx={{
               color: theme.palette.common.white,
@@ -131,6 +164,7 @@ const MainComponents = () => {
           >
             <MenuItem value='name'>Сортувати за {`ім'ям`}</MenuItem>
             <MenuItem value='company'>Сортувати за компанією</MenuItem>
+            <MenuItem value='manual'>Мій порядок</MenuItem>
           </Select>
 
           <Select
@@ -181,15 +215,26 @@ const MainComponents = () => {
           </Select>
         </Box>
 
-        <Stack spacing={2}>
-          {paginatedContacts.map((contact) => (
-            <ContactItem
-              key={contact.id}
-              contact={contact}
-              onDelete={handleDelete}
-            />
-          ))}
-        </Stack>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={contacts.map((c) => c.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <Stack spacing={2}>
+              {paginatedContacts.map((contact) => (
+                <SortableContactItem
+                  key={contact.id}
+                  contact={contact}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </Stack>
+          </SortableContext>
+        </DndContext>
 
         {totalPages > 1 && (
           <Pagination

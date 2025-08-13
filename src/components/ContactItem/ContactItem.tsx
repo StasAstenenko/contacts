@@ -1,5 +1,6 @@
 import { Contacts } from '@/types/contactsType';
-import { Delete, Edit } from '@mui/icons-material';
+import { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
+import { Delete, DragIndicator, Edit } from '@mui/icons-material';
 import {
   Avatar,
   Chip,
@@ -16,9 +17,14 @@ import { FormEvent } from 'react';
 interface ContactItemProps {
   contact: Contacts;
   onDelete: (id: string) => void;
+  dragHandleListeners?: SyntheticListenerMap;
 }
 
-const ContactItem = ({ contact, onDelete }: ContactItemProps) => {
+const ContactItem = ({
+  contact,
+  onDelete,
+  dragHandleListeners,
+}: ContactItemProps) => {
   const navigate = useRouter();
   const initials = `${contact.firstName?.[0] || ''}${
     contact.lastName?.[0] || ''
@@ -98,6 +104,9 @@ const ContactItem = ({ contact, onDelete }: ContactItemProps) => {
           </IconButton>
           <IconButton color='error' onClick={handleDelete}>
             <Delete />
+          </IconButton>
+          <IconButton {...dragHandleListeners}>
+            <DragIndicator />
           </IconButton>
         </Box>
       </ListItemButton>
