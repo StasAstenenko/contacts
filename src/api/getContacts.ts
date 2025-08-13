@@ -8,7 +8,7 @@ interface GetAllContactsProps {
 }
 
 export const getAllContacts = ({ onData }: GetAllContactsProps) => {
-  const q = query(collection(db, 'contacts'), orderBy('firstName', 'desc'));
+  const q = query(collection(db, 'contacts'), orderBy('order', 'asc'));
   const unsubscribeContacts = onSnapshot(q, (snapshot) => {
     const contactsData: Contacts[] = snapshot.docs.map((doc) => ({
       id: doc.id,
@@ -18,6 +18,7 @@ export const getAllContacts = ({ onData }: GetAllContactsProps) => {
       phone: doc.data().phone as string,
       email: doc.data().email as string,
       teg: doc.data().teg as Teg,
+      order: doc.data().order as number,
     }));
     onData(contactsData);
   });

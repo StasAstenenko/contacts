@@ -8,4 +8,5 @@ export interface Contacts {
   phone: string;
   company: string;
   teg: Teg;
+  order?: number;
 }

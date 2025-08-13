@@ -32,6 +32,7 @@ import {
 } from '@dnd-kit/sortable';
 import SortableContactItem from '../SortableContactItem/SortableContactItem';
 import { deleteContact } from '@/api/deleteContact';
+import { saveDragAndDrop } from '@/api/saveDragAndDrop';
 
 const MainComponents = () => {
   const theme = useTheme();
@@ -101,7 +102,9 @@ const MainComponents = () => {
 
   const sortedContacts = useMemo(() => {
     if (sortBy === 'manual') {
-      return filteredContacts;
+      return [...filteredContacts].sort(
+        (a, b) => (a.order ?? 0) - (b.order ?? 0)
+      );
     }
     if (sortBy === 'name') {
       return [...filteredContacts].sort((a, b) => {
@@ -134,7 +137,13 @@ const MainComponents = () => {
         const oldIndex = prev.findIndex((c) => c.id === active.id);
         const newIndex = prev.findIndex((c) => c.id === over.id);
         if (oldIndex === -1 || newIndex === -1) return prev;
-        return arrayMove(prev, oldIndex, newIndex);
+        const newContacts = arrayMove(prev, oldIndex, newIndex);
+
+        newContacts.forEach(async (contact, index) => {
+          await saveDragAndDrop(contact.id, index);
+        });
+
+        return newContacts;
       });
     }
   };
@@ -231,7 +240,7 @@ const MainComponents = () => {
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={contacts.map((c) => c.id)}
+            items={sortedContacts.map((c) => c.id)}
             strategy={verticalListSortingStrategy}
           >
             <Stack spacing={2}>
