@@ -1,4 +1,3 @@
-// /api/updateContact.ts
 import { db } from '@/firebase/client';
 import { Contacts } from '@/types/contactsType';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
